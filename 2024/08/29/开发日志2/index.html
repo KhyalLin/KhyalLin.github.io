@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 7.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha256-XOqroi11tY4EFQMR9ZYwZWKj5ZXiftSx36RRuC3anlA=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"example.com","root":"/","images":"/images","scheme":"Mist","darkmode":false,"version":"8.20.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"copycode":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="可能有细心的读者发现，上一篇文章的 tiny_construct.h 与 tiny_uninitialized.h 中出现了一些奇特的类型：__type_traits&lt;&gt;, __true_type, __false_type。 其实这属于一种称为 traits 编程（意为“类型萃取”）的技巧，利用 C++ template 的类型推导机制与函数重载规则在编译期解决类型识别的问题，有助于">
+<meta property="og:type" content="article">
+<meta property="og:title" content="TinySTL 开发日志 2：traits 编程与迭代器开发">
+<meta property="og:url" content="http://example.com/2024/08/29/%E5%BC%80%E5%8F%91%E6%97%A5%E5%BF%972/index.html">
+<meta property="og:site_name" content="Khyal&#39;s Blog">
+<meta property="og:description" content="可能有细心的读者发现，上一篇文章的 tiny_construct.h 与 tiny_uninitialized.h 中出现了一些奇特的类型：__type_traits&lt;&gt;, __true_type, __false_type。 其实这属于一种称为 traits 编程（意为“类型萃取”）的技巧，利用 C++ template 的类型推导机制与函数重载规则在编译期解决类型识别的问题，有助于">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2024-08-29T13:29:00.000Z">
+<meta property="article:modified_time" content="2024-09-16T14:22:03.707Z">
+<meta property="article:author" content="Khyal Lin">
+<meta property="article:tag" content="C&#x2F;C++">
+<meta property="article:tag" content="STL">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="http://example.com/2024/08/29/%E5%BC%80%E5%8F%91%E6%97%A5%E5%BF%972/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"http://example.com/2024/08/29/%E5%BC%80%E5%8F%91%E6%97%A5%E5%BF%972/","path":"2024/08/29/开发日志2/","title":"TinySTL 开发日志 2：traits 编程与迭代器开发"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>TinySTL 开发日志 2：traits 编程与迭代器开发 | Khyal's Blog</title>
+  
+
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Khyal's Blog</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%B8%80%E3%80%81tiny-type-traits-h"><span class="nav-number">1.</span> <span class="nav-text">一、tiny_type_traits.h</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%BA%8C%E3%80%81tiny-iterator-h"><span class="nav-number">2.</span> <span class="nav-text">二、tiny_iterator.h</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Khyal Lin"
+      src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">Khyal Lin</p>
+  <div class="site-description" itemprop="description">学生 & 极客</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">13</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">1</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/KhyalLin" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;KhyalLin" rel="noopener me" target="_blank"><i class="fab fa-github fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/khyal_lin@163.com" title="E-Mail → khyal_lin@163.com" rel="noopener me"><i class="fa fa-envelope fa-fw"></i></a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2024/08/29/%E5%BC%80%E5%8F%91%E6%97%A5%E5%BF%972/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="Khyal Lin">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Khyal's Blog">
+      <meta itemprop="description" content="学生 & 极客">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="TinySTL 开发日志 2：traits 编程与迭代器开发 | Khyal's Blog">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          TinySTL 开发日志 2：traits 编程与迭代器开发
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2024-08-29 21:29:00" itemprop="dateCreated datePublished" datetime="2024-08-29T21:29:00+08:00">2024-08-29</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2024-09-16 22:22:03" itemprop="dateModified" datetime="2024-09-16T22:22:03+08:00">2024-09-16</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Khyal-s-TinySTL/" itemprop="url" rel="index"><span itemprop="name">Khyal's TinySTL</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><p>可能有细心的读者发现，上一篇文章的 tiny_construct.h 与 tiny_uninitialized.h 中出现了一些奇特的类型：__type_traits&lt;&gt;, __true_type, __false_type。</p>
+<p>其实这属于一种称为 traits 编程（意为“类型萃取”）的技巧，利用 C++ template 的类型推导机制与函数重载规则在编译期解决类型识别的问题，有助于根据不同类型选择调用的函数（详见函数 uninitialized_fill() 的实现），弥补 C++ 弱类型的缺陷。</p>
+<p>利用这种机制，还能帮助我们开发 stl 中的 iterator（迭代器），为 container（容器）准备最后一块拼图。当然需要用到大量 C++ 泛型编程的技巧，以下逐一进行讲解。</p>
+<span id="more"></span>
+
+<h4 id="一、tiny-type-traits-h"><a href="#一、tiny-type-traits-h" class="headerlink" title="一、tiny_type_traits.h"></a>一、tiny_type_traits.h</h4><p>首先我们需要两个类型而不是两个值标示 true 与 false，在这里声明两个空的结构体：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">struct</span> <span class="title class_">__true_type</span> &#123; &#125;;</span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">__false_type</span> &#123; &#125;;</span><br></pre></td></tr></table></figure>
+
+<p>我们希望程序可以这样判断类型 T 是否有以下五个性质，用他们的类型进行参数推导：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">__type_traits&lt;T&gt;::has_trivial_default_constructor</span><br><span class="line">__type_traits&lt;T&gt;::has_trivial_copy_constructor</span><br><span class="line">__type_traits&lt;T&gt;::has_trivial_assignment_operator</span><br><span class="line">__type_traits&lt;T&gt;::has_trivial_destructor</span><br><span class="line">__type_traits&lt;T&gt;::is_POD_type</span><br></pre></td></tr></table></figure>
+
+<p>因此我们先用最保守的方法定义 __type_traits，然后为每个 C++ 类型定制适当的实例化版本。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">__type_traits</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">using</span> __this_dummy_member_must_be_first = __true_type;</span><br><span class="line">    <span class="keyword">using</span> has_trivial_default_constructor = __false_type; </span><br><span class="line">    <span class="keyword">using</span> has_trivial_copy_constructor = __false_type;</span><br><span class="line">    <span class="keyword">using</span> has_trivial_assignment_operator = __false_type;</span><br><span class="line">    <span class="keyword">using</span> has_trivial_destructor = __false_type;</span><br><span class="line">    <span class="keyword">using</span> is_POD_type = __false_type;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">template</span> &lt;&gt;</span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">__type_traits</span>&lt;<span class="type">char</span>&gt;</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">using</span> has_trivial_default_constructor = __true_type; </span><br><span class="line">    <span class="keyword">using</span> has_trivial_copy_constructor = __true_type;</span><br><span class="line">    <span class="keyword">using</span> has_trivial_assignment_operator = __true_type;</span><br><span class="line">    <span class="keyword">using</span> has_trivial_destructor = __true_type;</span><br><span class="line">    <span class="keyword">using</span> is_POD_type = __true_type;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="comment">// ... 为每个原生类型提供自己的 __type_traits （已省略）</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">__type_traits</span>&lt;T*&gt;</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">using</span> has_trivial_default_constructor = __true_type; </span><br><span class="line">    <span class="keyword">using</span> has_trivial_copy_constructor = __true_type;</span><br><span class="line">    <span class="keyword">using</span> has_trivial_assignment_operator = __true_type;</span><br><span class="line">    <span class="keyword">using</span> has_trivial_destructor = __true_type;</span><br><span class="line">    <span class="keyword">using</span> is_POD_type = __true_type;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>这样针对不同的类型属性，我们在编译期完成函数派送决定，例如对全局函数 copy()，根据类型是否有 has_trivial_constructor 性质，帮助我们确定能不能用最高效的 memmove() 或 memcpy()。然后根据这些性质，提供更多的特化与强化版本。</p>
+<p>作为该版本 TinySTL 的用户，你还能更好的利用这个 __type_traits。如果编译器支持，对每个类型 T “萃取”出的性质将与实际声明相同，否则你也可以声明自己的 __type_traits<T>。对于 iterator，traits 编程还将发挥更大的作用。</p>
+<h4 id="二、tiny-iterator-h"><a href="#二、tiny-iterator-h" class="headerlink" title="二、tiny_iterator.h"></a>二、tiny_iterator.h</h4><p>出于最简单的直觉，每个 container 的开发者需要自行开发对应的 iterator，笔者本人在开发一个简单的贪吃蛇小游戏时，仿照 STL 的接口设计实现了双向队列类 Deque，但在开发迭代器时犯了难，源程序如下：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 如下，省略了各方法的具体实现</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> type&gt;</span><br><span class="line"><span class="keyword">class</span> <span class="title class_">Deque</span>		<span class="comment">// double-ended queue</span></span><br><span class="line">&#123;</span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">	<span class="keyword">class</span> <span class="title class_">Node</span></span><br><span class="line">	&#123;</span><br><span class="line">	<span class="keyword">public</span>:</span><br><span class="line">		type data;</span><br><span class="line">		Node* prev;</span><br><span class="line">		Node* next;</span><br><span class="line"></span><br><span class="line">		<span class="built_in">Node</span>() : <span class="built_in">next</span>(<span class="literal">nullptr</span>), <span class="built_in">prev</span>(<span class="literal">nullptr</span>) &#123;&#125;</span><br><span class="line">		<span class="built_in">Node</span>(<span class="type">const</span> type&amp; _dta, Node* _prv = <span class="literal">nullptr</span>, Node* _nxt = <span class="literal">nullptr</span>)</span><br><span class="line">			: <span class="built_in">data</span>(_dta), <span class="built_in">prev</span>(_prv), <span class="built_in">next</span>(_nxt) &#123;&#125;</span><br><span class="line">	&#125;;</span><br><span class="line">	Node* head;</span><br><span class="line">	Node* tail;</span><br><span class="line">	<span class="type">int</span> len;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">	<span class="keyword">class</span> <span class="title class_">Handle</span></span><br><span class="line">	&#123;</span><br><span class="line">	<span class="keyword">private</span>:</span><br><span class="line">		Node* ptr;</span><br><span class="line">		<span class="built_in">Handle</span>(Node* p = <span class="literal">nullptr</span>) : <span class="built_in">ptr</span>(p) &#123;&#125;</span><br><span class="line">	<span class="keyword">public</span>:</span><br><span class="line">		<span class="keyword">friend</span> <span class="keyword">class</span> <span class="title class_">Deque</span>;</span><br><span class="line">		type <span class="keyword">operator</span>*() <span class="type">const</span> &#123;</span><br><span class="line">			<span class="keyword">return</span> ptr-&gt;data;</span><br><span class="line">		&#125;</span><br><span class="line">		type* <span class="keyword">operator</span>-&gt;() <span class="type">const</span> &#123;</span><br><span class="line">			<span class="keyword">return</span> &amp;ptr-&gt;data;</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="type">bool</span> <span class="keyword">operator</span>==(<span class="type">const</span> Handle&amp; p) <span class="type">const</span> &#123;</span><br><span class="line">			<span class="keyword">return</span> ptr == p.ptr;</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="type">bool</span> <span class="keyword">operator</span>!=(<span class="type">const</span> Handle&amp; p) <span class="type">const</span> &#123;</span><br><span class="line">			<span class="keyword">return</span> !(*<span class="keyword">this</span> == p);</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="type">void</span> <span class="keyword">operator</span>++() &#123;</span><br><span class="line">			ptr = ptr-&gt;next;</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="type">void</span> <span class="keyword">operator</span>++(<span class="type">int</span>) &#123;</span><br><span class="line">			ptr = ptr-&gt;next;</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="type">void</span> <span class="keyword">operator</span>--() &#123;</span><br><span class="line">			ptr = ptr-&gt;prev;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;;</span><br><span class="line">	<span class="built_in">Deque</span>();</span><br><span class="line">	~<span class="built_in">Deque</span>();</span><br><span class="line">	<span class="function"><span class="type">bool</span> <span class="title">empty</span><span class="params">()</span> <span class="type">const</span></span>;</span><br><span class="line">	<span class="function"><span class="type">int</span> <span class="title">size</span><span class="params">()</span> <span class="type">const</span></span>;</span><br><span class="line">	<span class="function">type <span class="title">front</span><span class="params">()</span> <span class="type">const</span></span>;</span><br><span class="line">	<span class="function">type <span class="title">back</span><span class="params">()</span> <span class="type">const</span></span>;</span><br><span class="line">	<span class="function">Handle <span class="title">begin</span><span class="params">()</span> <span class="type">const</span></span>;</span><br><span class="line">	<span class="function">Handle <span class="title">end</span><span class="params">()</span> <span class="type">const</span></span>;</span><br><span class="line">	<span class="function"><span class="type">void</span> <span class="title">push_front</span><span class="params">(<span class="type">const</span> type&amp;)</span></span>;</span><br><span class="line">	<span class="function"><span class="type">void</span> <span class="title">push_back</span><span class="params">(<span class="type">const</span> type&amp;)</span></span>;</span><br><span class="line">	<span class="function"><span class="type">void</span> <span class="title">pop_front</span><span class="params">()</span></span>;</span><br><span class="line">	<span class="function"><span class="type">void</span> <span class="title">pop_back</span><span class="params">()</span></span>;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>以现在的标准看，迭代器 Handle 的设计显然不算优秀。不支持随机访问，不支持通过迭代器对内容进行修改（非常间接，还返回了实际地址的指针），不支持返回引用，不支持得到两个迭代器的距离，不支持获取其指向的类型，最大的作用是兼容 C++11 的按范围 For 循环。</p>
+<p>为了解决以上问题，除了用更高级的数据结构之外，我们要求每个 iterator 以内嵌类型定义的形式给出其五个性质：category, value_type, difference_type, reference, pointer。我们将提供同名函数，基于 traits 编程“萃取”出它的性质，例如 value_type(iterator) 将返回一个指向 iterator::value_type 类型的空指针，如下：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> Iterator&gt;</span><br><span class="line"><span class="function"><span class="keyword">auto</span> <span class="title">iterator_category</span><span class="params">(<span class="type">const</span> Iterator&amp;)</span> </span></span><br><span class="line"><span class="function">    -&gt; iterator_traits&lt;Iterator&gt;::iterator_category</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">category</span>();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> Iterator&gt;</span><br><span class="line"><span class="function"><span class="keyword">auto</span> <span class="title">distance_type</span><span class="params">(<span class="type">const</span> Iterator&amp;)</span> </span></span><br><span class="line"><span class="function">    -&gt; iterator_traits&lt;Iterator&gt;::difference_type*</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">nullptr</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> Iterator&gt;</span><br><span class="line"><span class="function"><span class="keyword">auto</span> <span class="title">value_type</span><span class="params">(<span class="type">const</span> Iterator&amp;)</span> </span></span><br><span class="line"><span class="function">    -&gt; iterator_traits&lt;Iterator&gt;::value_type*</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">nullptr</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里 iterator_traits&lt;&gt; 类似于上一小节的 type_traits&lt;&gt;，如果不能萃取出 iterator 的性质，我们甚至难以得到 iterator 指向什么类型的元素。这里着重讨论性质 category，众所周知 iterator 分为以下五类：input, output, forward, bidirectional, random access。以 advance() 函数为例，random access iterator 就不需要一步一步前进了，可以在 O(1) 以内到达指定位置。给出如下继承关系：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">struct</span> <span class="title class_">input_iterator_tag</span> &#123; &#125;;</span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">output_iterator_tag</span> &#123; &#125;;</span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">forward_iterator_tag</span> : <span class="keyword">public</span> input_iterator_tag &#123; &#125;;</span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">bidirection_iterator_tag</span> : <span class="keyword">public</span> forward_iterator_tag &#123; &#125;;</span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">random_access_iterator_tag</span> : <span class="keyword">public</span> bidirection_iterator_tag &#123; &#125;;</span><br></pre></td></tr></table></figure>
+
+<p>无法给出内嵌类型声明的原生指针，与产生歧义的 const 原生指针，我们给出实例化版本：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> Iterator&gt;</span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">iterator_traits</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">using</span> iterator_category = <span class="keyword">typename</span> Iterator::iterator_category;</span><br><span class="line">    <span class="keyword">using</span> value_type = <span class="keyword">typename</span> Iterator::value_type;</span><br><span class="line">    <span class="keyword">using</span> difference_type = <span class="keyword">typename</span> Iterator::difference;</span><br><span class="line">    <span class="keyword">using</span> pointer = <span class="keyword">typename</span> Iterator::pointer;</span><br><span class="line">    <span class="keyword">using</span> referencce = <span class="keyword">typename</span> Iterator::reference;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">iterator_traits</span>&lt;T*&gt;</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">using</span> iterator_category = random_access_iterator_tag;</span><br><span class="line">    <span class="keyword">using</span> value_type = T;</span><br><span class="line">    <span class="keyword">using</span> difference_type = <span class="type">ptrdiff_t</span>;</span><br><span class="line">    <span class="keyword">using</span> pointer = T*</span><br><span class="line">    <span class="keyword">using</span> referencce = T&amp;;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">iterator_traits</span>&lt;<span class="type">const</span> T*&gt;</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">using</span> iterator_category = random_access_iterator_tag;</span><br><span class="line">    <span class="keyword">using</span> value_type = T;</span><br><span class="line">    <span class="keyword">using</span> difference_type = <span class="type">ptrdiff_t</span>;</span><br><span class="line">    <span class="keyword">using</span> pointer = <span class="type">const</span> T*</span><br><span class="line">    <span class="keyword">using</span> referencce = <span class="type">const</span> T&amp;;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>那么 iterator_traits<iterator>::iterator_category() 将生成一个临时空结构体对象，没有任何开销，但可以用于推导实际调用的函数，distance() 函数同理。</p>
+<p>这样甚至可以避免写出单独用于跳转的函数，只需要写出几个重载的模板函数，进一步提高了效率。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// iterator methods: distance()</span></span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> InputIterator&gt;</span><br><span class="line"><span class="keyword">auto</span> __distance(InputIterator first, InputIterator last, input_iterator_tag) </span><br><span class="line">    -&gt; iterator_traits&lt;InputIterator&gt;::difference_type</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">typename</span> iterator_traits&lt;InputIterator&gt;::difference_type n = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">while</span> (first != last)</span><br><span class="line">        first++, n++;</span><br><span class="line">    <span class="keyword">return</span> n;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> InputIterator&gt;</span><br><span class="line"><span class="keyword">auto</span> __distance(InputIterator first, InputIterator last, random_access_iterator_tag) </span><br><span class="line">    -&gt; iterator_traits&lt;InputIterator&gt;::difference_type</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">return</span> last - first;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> InputIterator&gt;</span><br><span class="line"><span class="function"><span class="keyword">auto</span> <span class="title">distance</span><span class="params">(InputIterator first, InputIterator last)</span> </span></span><br><span class="line"><span class="function">    -&gt; iterator_traits&lt;InputIterator&gt;::difference_type</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">using</span> category = <span class="keyword">typename</span> iterator_traits&lt;InputIterator&gt;::iterator_category;</span><br><span class="line">    <span class="keyword">return</span> __distance(first, last, <span class="built_in">category</span>());</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// iterator methods: advance()</span></span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> InputIterator, <span class="keyword">typename</span> Distance&gt;</span><br><span class="line"><span class="type">void</span> __advance(InputIterator&amp; i, Distance n, input_iterator_tag)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">while</span> (n--)</span><br><span class="line">        i++;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> BidirectionalIterator, <span class="keyword">typename</span> Distance&gt;</span><br><span class="line"><span class="type">void</span> __advance(BidirectionalIterator&amp; i, Distance n, bidirection_iterator_tag)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span> (n &gt;= <span class="number">0</span>)</span><br><span class="line">        <span class="keyword">while</span> (n--) i++;</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">        <span class="keyword">while</span> (n--) i++;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> RandomAccessIterator, <span class="keyword">typename</span> Distance&gt;</span><br><span class="line"><span class="type">void</span> __advance(RandomAccessIterator&amp; i, Distance n, random_access_iterator_tag)</span><br><span class="line">&#123;</span><br><span class="line">    i += n;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> InputIterator, <span class="keyword">typename</span> Distance&gt;</span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">advance</span><span class="params">(InputIterator&amp; i, Distance n)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    __advance(i, n, <span class="built_in">iterator_category</span>(i));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>容器的作者开发其专属迭代器时，只需要继承自以下类型即可：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> Category, <span class="keyword">typename</span> T, <span class="keyword">class</span> <span class="title class_">Distance</span> = <span class="type">ptrdiff_t</span>, </span><br><span class="line">          <span class="keyword">typename</span> Pointer = T*, <span class="keyword">class</span> Reference = T&amp;&gt;</span><br><span class="line"><span class="keyword">struct</span> iterator</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">using</span> iterator_category = Category;</span><br><span class="line">    <span class="keyword">using</span> value_type = T;</span><br><span class="line">    <span class="keyword">using</span> difference_type = Distance;</span><br><span class="line">    <span class="keyword">using</span> pointer = Pointer;</span><br><span class="line">    <span class="keyword">using</span> reference = Reference;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>以上就是 iterator 的全部设计。这只不过是冰山一角，真正的问题还会在在开发具体容器时出现，但作为一种设计思想，这已经足够了。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/C-C/" rel="tag"># C/C++</a>
+              <a href="/tags/STL/" rel="tag"># STL</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2024/08/28/%E5%BC%80%E5%8F%91%E6%97%A5%E5%BF%971/" rel="prev" title="TinySTL 开发日志 1：内存空间配置">
+                  <i class="fa fa-angle-left"></i> TinySTL 开发日志 1：内存空间配置
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2024/08/31/%E5%BC%80%E5%8F%91%E6%97%A5%E5%BF%973-1/" rel="next" title="TinySTL 开发日志 3-1：动态数组 vector">
+                  TinySTL 开发日志 3-1：动态数组 vector <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2024</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Khyal Lin</span>
+  </div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/mist/" rel="noopener" target="_blank">NexT.Mist</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/sidebar.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+</body>
+</html>
