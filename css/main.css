@@ -1390,7 +1390,7 @@ pre code {
     vertical-align: middle;
   }
   .links-of-author a::before {
-    background: #7fff7c;
+    background: #ba7aff;
     display: inline-block;
     margin-right: 3px;
     transform: translateY(-2px);
@@ -2563,6 +2563,13 @@ mark.search-keyword {
   color: #ff2a2a;
   font-weight: bold;
 }
+mjx-container[jax='CHTML'][display='true'],
+.has-jax {
+  overflow: auto hidden;
+}
+mjx-container[display='true'] + br {
+  display: none;
+}
 .use-motion .animated {
   animation-fill-mode: none;
   visibility: inherit;
@@ -2891,6 +2898,13 @@ header.header {
   .comments {
     padding: 10px 12px;
   }
+}
+body {
+  background: url("/images/background.jpeg");
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  background-size: cover;
+  background-position: 50% 50%;
 }
 @media (min-width: 992px) and (max-width: 991px) {
   .sidebar {

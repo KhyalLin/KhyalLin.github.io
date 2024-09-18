@@ -157,6 +157,10 @@
     </div>
 
     
+
+    <iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width=330 height=110 
+      src="//music.163.com/outchain/player?type=0&id=6632463143&auto=1&height=90">
+    </iframe>
   </aside>
 
 
@@ -326,8 +330,15 @@ Online Contest</a></p>
     
     
     <div class="post-body" itemprop="articleBody">
-          <p>unordered_map 和 unordered_set 使用率并不亚于 map 和 set。就像上次我们分析的，unordered_set 通过其元素整体计算哈希值，而 map 允许通过其元素一部分计算哈希值；set 不允许通过迭代器修改其元素，而 map 允许通过迭代器部分修改其元素。</p>
-<p>由于这两种容器与之前很相像，需要调整的部分大同小异，再加上 hashtable 异常高的效率，本次开发非常轻松。这是 C++11 标准中最后两个关联式容器，接下来对 container 的开发会告一段落，注意力转向 functional、adapter 以及算法部分，敬请期待：）</p>
+          <p>unordered_map 和 unordered_set 使用率并不亚于 map 和
+set。就像上次我们分析的，unordered_set 通过其元素整体计算哈希值，而 map
+允许通过其元素一部分计算哈希值；set 不允许通过迭代器修改其元素，而 map
+允许通过迭代器部分修改其元素。</p>
+<p>由于这两种容器与之前很相像，需要调整的部分大同小异，再加上 hashtable
+异常高的效率，本次开发非常轻松。这是 C++11
+标准中最后两个关联式容器，接下来对 container
+的开发会告一段落，注意力转向 functional、adapter
+以及算法部分，敬请期待：）</p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2024/09/11/%E5%BC%80%E5%8F%91%E6%97%A5%E5%BF%974-4/#more" rel="contents">
@@ -419,8 +430,13 @@ Online Contest</a></p>
     
     
     <div class="post-body" itemprop="articleBody">
-          <p>哈希表 hashtable 提供了一种不同于红黑树 rb_tree 的关联式容器。如果以 Acmer 的角度简单分析其优劣，hashtable 牺牲了元素的有序，用更大的空间占用换取了常数级的查询、插入、删除操作，且实现起来更加简单。</p>
-<p>既然两种容器各有优劣，那没理由不去都实现一遍。哈希表的原理自不必说，只要 tiny_hash_fun.h 头文件中有定义 hash<T>，或用户自己实现了 hash<T>，那么类型 T 就可以用 hashtable 维护。另外，STL 中的哈希表使用开链法处理哈希冲突，当元素数量超过桶的数量时，自动重新整理整个哈希表。</p>
+          <p>哈希表 hashtable 提供了一种不同于红黑树 rb_tree 的关联式容器。如果以
+Acmer 的角度简单分析其优劣，hashtable
+牺牲了元素的有序，用更大的空间占用换取了常数级的查询、插入、删除操作，且实现起来更加简单。</p>
+<p>既然两种容器各有优劣，那没理由不去都实现一遍。哈希表的原理自不必说，只要
+tiny_hash_fun.h 头文件中有定义 hash<T>，或用户自己实现了
+hash<T>，那么类型 T 就可以用 hashtable 维护。另外，STL
+中的哈希表使用开链法处理哈希冲突，当元素数量超过桶的数量时，自动重新整理整个哈希表。</p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2024/09/09/%E5%BC%80%E5%8F%91%E6%97%A5%E5%BF%974-3/#more" rel="contents">
@@ -519,8 +535,13 @@ Online Contest</a></p>
 <li>multiset：与 set 大致相同，但允许重复的键出现。</li>
 <li>multimap：与 map 大致相同，但允许重复的键出现。</li>
 </ul>
-<p>虽然都是集合，但刻意划分出 set 与 map 的区别是为了满足 STL 的设计理念。简单来说，set 允许通过其元素整体的大小排序，而 map 允许通过其元素一部分的大小排序；set 不允许通过迭代器修改其元素，而 map 允许通过迭代器部分修改其元素。只要使用得当，红黑树的所有应用场景都能覆盖，不得不佩服设计者的巧思。</p>
-<p>也是因为覆盖了所有的场景，我们的设计需要更加谨慎，尤其是涉及 const 方法时。rb_tree 显著降低了设计的心智负担（但如果完全按照《STL源码剖析》甚至无法通过编译），以下是源代码。</p>
+<p>虽然都是集合，但刻意划分出 set 与 map 的区别是为了满足 STL
+的设计理念。简单来说，set 允许通过其元素整体的大小排序，而 map
+允许通过其元素一部分的大小排序；set 不允许通过迭代器修改其元素，而 map
+允许通过迭代器部分修改其元素。只要使用得当，红黑树的所有应用场景都能覆盖，不得不佩服设计者的巧思。</p>
+<p>也是因为覆盖了所有的场景，我们的设计需要更加谨慎，尤其是涉及 const
+方法时。rb_tree
+显著降低了设计的心智负担（但如果完全按照《STL源码剖析》甚至无法通过编译），以下是源代码。</p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2024/09/06/%E5%BC%80%E5%8F%91%E6%97%A5%E5%BF%974-2/#more" rel="contents">
@@ -612,9 +633,15 @@ Online Contest</a></p>
     
     
     <div class="post-body" itemprop="articleBody">
-          <p>真正的重头戏来了！平衡二叉搜索树中最常用的红黑树 RB-Tree，不仅能在 O(logn) 以内完成查询、插入、删除操作，还具有非常优秀的常数，高频修改的效率远非 AVL 树可比。</p>
-<p>为了实现 set 与 map，笔者仿造《STL源码剖析》中的 std::rb_tree 实现了 insert, clear, find 等操作，同时补充了 erase, lower_bound, upper_bound, 以及复制构造函数、重载复制运算符等内存操作。</p>
-<p>本次还补充了更多的 const 方法，学习 SGI STL 的非侵入式容器方法，是最接近库函数源代码的一次，还设计了更复杂的测试程序，覆盖了各种不同的插入&#x2F;删除场景，附于文章末尾。以下是源代码。</p>
+          <p>真正的重头戏来了！平衡二叉搜索树中最常用的红黑树 RB-Tree，不仅能在
+O(logn)
+以内完成查询、插入、删除操作，还具有非常优秀的常数，高频修改的效率远非
+AVL 树可比。</p>
+<p>为了实现 set 与 map，笔者仿造《STL源码剖析》中的 std::rb_tree 实现了
+insert, clear, find 等操作，同时补充了 erase, lower_bound, upper_bound,
+以及复制构造函数、重载复制运算符等内存操作。</p>
+<p>本次还补充了更多的 const 方法，学习 SGI STL
+的非侵入式容器方法，是最接近库函数源代码的一次，还设计了更复杂的测试程序，覆盖了各种不同的插入/删除场景，附于文章末尾。以下是源代码。</p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2024/09/06/%E5%BC%80%E5%8F%91%E6%97%A5%E5%BF%974-1/#more" rel="contents">
@@ -798,8 +825,13 @@ Online Contest</a></p>
     
     
     <div class="post-body" itemprop="articleBody">
-          <p>严格来说，priority_queue 也不能算是一个 container，它是以 vector 为基础、辅以 heap 系列算法的 adapter。在这种狭窄的应用场景下，堆是比红黑树更有性价比的选择，因为红黑树的常数太大了。</p>
-<p>话不多说，后面是 heap 系列算法的实现，包括 push_heap()、pop_heap()、sort_heap()、make_heap() 等，其中 sort_heap() 指堆排序，也是一个优秀的排序算法。然后是简洁优美的 priority_queue，支持自定义 Compare 类，默认为大根堆。</p>
+          <p>严格来说，priority_queue 也不能算是一个 container，它是以 vector
+为基础、辅以 heap 系列算法的
+adapter。在这种狭窄的应用场景下，堆是比红黑树更有性价比的选择，因为红黑树的常数太大了。</p>
+<p>话不多说，后面是 heap 系列算法的实现，包括
+push_heap()、pop_heap()、sort_heap()、make_heap() 等，其中 sort_heap()
+指堆排序，也是一个优秀的排序算法。然后是简洁优美的
+priority_queue，支持自定义 Compare 类，默认为大根堆。</p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2024/09/03/%E5%BC%80%E5%8F%91%E6%97%A5%E5%BF%973-5/#more" rel="contents">
@@ -891,7 +923,10 @@ Online Contest</a></p>
     
     
     <div class="post-body" itemprop="articleBody">
-          <p>比起前两天的工作，这次的难度可以忽略不计了，那就是开发 stack 和 queue。事实上，stack 和 queue 不能称之为 container，只能称之为 container adapter。以既有容器（list 或 deque）为底层，对其接口进行一点简单的包装，就能轻而易举地实现“先进先出”或“先进后出”的特性。</p>
+          <p>比起前两天的工作，这次的难度可以忽略不计了，那就是开发 stack 和
+queue。事实上，stack 和 queue 不能称之为 container，只能称之为 container
+adapter。以既有容器（list 或
+deque）为底层，对其接口进行一点简单的包装，就能轻而易举地实现“先进先出”或“先进后出”的特性。</p>
 <p>这么简单也要水一篇文章，就是对我们辛苦付出的补偿（：</p>
           <!--noindex-->
             <div class="post-button">
@@ -984,10 +1019,19 @@ Online Contest</a></p>
     
     
     <div class="post-body" itemprop="articleBody">
-          <p>deque 是双向开口的连续线性空间，一款支持头尾操作、随机访问的几乎完美的序列式容器。通过一个中控器 map（不是那个红黑树），在分段的连续空间上维护其整体连续的假象，设计数据结构、迭代器增减操作都颇为繁琐。</p>
-<p>开发 deque 的过程中，C++ 标准库的设计哲学发挥了指导性的作用。由于其操作本身很复杂，不可避免地会设计出大量复杂的抽象层级。但是，还需要为用户提供傻瓜式的接口，最大可能隐藏实现细节。</p>
-<p>难度虽高，但借助 STL 高质量的源码，最复杂的部分解决后，我们自己也可以使用那些傻瓜式接口。例如 insert() 与 erase() 实现起来比我想象中更简单，因为最复杂的部分已经隐藏在 iterator 的设计中了，接下来只需要 copy 或 copy_backward 就可以。（注：一想到不用一个个操作中控器，心情舒畅了不少，开发效率都提高了）</p>
-<p>此外笔者一直纠结于 const 语法和语义的冲突，今天突然悟到了 const_iterator 是怎么实现的，马上会再去修改前面的 vector 和 list。至于 reverse_iterator，就和 adapter 一起开发吧，鸽了。</p>
+          <p>deque
+是双向开口的连续线性空间，一款支持头尾操作、随机访问的几乎完美的序列式容器。通过一个中控器
+map（不是那个红黑树），在分段的连续空间上维护其整体连续的假象，设计数据结构、迭代器增减操作都颇为繁琐。</p>
+<p>开发 deque 的过程中，C++
+标准库的设计哲学发挥了指导性的作用。由于其操作本身很复杂，不可避免地会设计出大量复杂的抽象层级。但是，还需要为用户提供傻瓜式的接口，最大可能隐藏实现细节。</p>
+<p>难度虽高，但借助 STL
+高质量的源码，最复杂的部分解决后，我们自己也可以使用那些傻瓜式接口。例如
+insert() 与 erase() 实现起来比我想象中更简单，因为最复杂的部分已经隐藏在
+iterator 的设计中了，接下来只需要 copy 或 copy_backward
+就可以。（注：一想到不用一个个操作中控器，心情舒畅了不少，开发效率都提高了）</p>
+<p>此外笔者一直纠结于 const 语法和语义的冲突，今天突然悟到了
+const_iterator 是怎么实现的，马上会再去修改前面的 vector 和 list。至于
+reverse_iterator，就和 adapter 一起开发吧，鸽了。</p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2024/09/02/%E5%BC%80%E5%8F%91%E6%97%A5%E5%BF%973-3/#more" rel="contents">
@@ -1079,8 +1123,15 @@ Online Contest</a></p>
     
     
     <div class="post-body" itemprop="articleBody">
-          <p>每个 C 语言学习者应该都学过链表，至少自己尝试过链表。list 是相比 vector 更加灵活的数据结构，支持绝对精准地使用内存空间，通过私有方法 transfer() 提供了 merge(), sort(), unique(), splice(), reverse() 等方法，弥补 list 没有 random access iterator 的缺陷。</p>
-<p>笔者学链表看的是浙江大学翁恺老师的课程，以为自己学会了，但 C++ 双向链表还是有不少难处。这次相比标准库优化的是，只要用户获取了迭代器，同样可以把这个 list 作为环状链表访问，也就可以模拟约瑟夫问题（之类的）。这次还提供了更多的内存操作，支持复制构造&#x2F;右值引用构造&#x2F;迭代器区间构造&#x2F;重载赋值运算符&#x2F; swap 窃取等，请看具体实现。</p>
+          <p>每个 C 语言学习者应该都学过链表，至少自己尝试过链表。list 是相比
+vector 更加灵活的数据结构，支持绝对精准地使用内存空间，通过私有方法
+transfer() 提供了 merge(), sort(), unique(), splice(), reverse()
+等方法，弥补 list 没有 random access iterator 的缺陷。</p>
+<p>笔者学链表看的是浙江大学翁恺老师的课程，以为自己学会了，但 C++
+双向链表还是有不少难处。这次相比标准库优化的是，只要用户获取了迭代器，同样可以把这个
+list
+作为环状链表访问，也就可以模拟约瑟夫问题（之类的）。这次还提供了更多的内存操作，支持复制构造/右值引用构造/迭代器区间构造/重载赋值运算符/
+swap 窃取等，请看具体实现。</p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2024/08/31/%E5%BC%80%E5%8F%91%E6%97%A5%E5%BF%973-2/#more" rel="contents">

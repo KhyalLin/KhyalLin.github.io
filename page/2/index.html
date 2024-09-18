@@ -157,6 +157,10 @@
     </div>
 
     
+
+    <iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width=330 height=110 
+      src="//music.163.com/outchain/player?type=0&id=6632463143&auto=1&height=90">
+    </iframe>
   </aside>
 
 
@@ -230,8 +234,17 @@
     
     
     <div class="post-body" itemprop="articleBody">
-          <p>相比 C++ 语言提供的静态数组 array&lt;&gt;，动态数组 vector&lt;&gt; 更有实用价值，也是对之前 allocator 与 iterator 的第一重考验。我们需要维护一块连续的线性空间，提供 push_back(), pop_back(), insert(), erase(), resize(), assign() 等需要重新配置内存与迭代器的方法。</p>
-<p>最关键的是 vector 对大小的控制和内存重新分配的策略，具体实施起来，是一个 申请新空间 -&gt; 移动数据 -&gt; 释放旧空间 -&gt; 配置迭代器 的大工程。本次参考的仍然是侯捷先生所著的《STL 源码剖析》，遗憾的是，智者千虑必有一失，他给出 insert() 的注释也有些小小的纰漏，其实搬运旧数据并不是一次性完成的。</p>
+          <p>相比 C++ 语言提供的静态数组 array&lt;&gt;，动态数组 vector&lt;&gt;
+更有实用价值，也是对之前 allocator 与 iterator
+的第一重考验。我们需要维护一块连续的线性空间，提供 push_back(),
+pop_back(), insert(), erase(), resize(), assign()
+等需要重新配置内存与迭代器的方法。</p>
+<p>最关键的是 vector
+对大小的控制和内存重新分配的策略，具体实施起来，是一个 申请新空间 -&gt;
+移动数据 -&gt; 释放旧空间 -&gt; 配置迭代器
+的大工程。本次参考的仍然是侯捷先生所著的《STL
+源码剖析》，遗憾的是，智者千虑必有一失，他给出 insert()
+的注释也有些小小的纰漏，其实搬运旧数据并不是一次性完成的。</p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2024/08/31/%E5%BC%80%E5%8F%91%E6%97%A5%E5%BF%973-1/#more" rel="contents">
@@ -323,9 +336,16 @@
     
     
     <div class="post-body" itemprop="articleBody">
-          <p>可能有细心的读者发现，上一篇文章的 tiny_construct.h 与 tiny_uninitialized.h 中出现了一些奇特的类型：__type_traits&lt;&gt;, __true_type, __false_type。</p>
-<p>其实这属于一种称为 traits 编程（意为“类型萃取”）的技巧，利用 C++ template 的类型推导机制与函数重载规则在编译期解决类型识别的问题，有助于根据不同类型选择调用的函数（详见函数 uninitialized_fill() 的实现），弥补 C++ 弱类型的缺陷。</p>
-<p>利用这种机制，还能帮助我们开发 stl 中的 iterator（迭代器），为 container（容器）准备最后一块拼图。当然需要用到大量 C++ 泛型编程的技巧，以下逐一进行讲解。</p>
+          <p>可能有细心的读者发现，上一篇文章的 tiny_construct.h 与
+tiny_uninitialized.h 中出现了一些奇特的类型：__type_traits&lt;&gt;,
+__true_type, __false_type。</p>
+<p>其实这属于一种称为 traits 编程（意为“类型萃取”）的技巧，利用 C++
+template
+的类型推导机制与函数重载规则在编译期解决类型识别的问题，有助于根据不同类型选择调用的函数（详见函数
+uninitialized_fill() 的实现），弥补 C++ 弱类型的缺陷。</p>
+<p>利用这种机制，还能帮助我们开发 stl 中的 iterator（迭代器），为
+container（容器）准备最后一块拼图。当然需要用到大量 C++
+泛型编程的技巧，以下逐一进行讲解。</p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2024/08/29/%E5%BC%80%E5%8F%91%E6%97%A5%E5%BF%972/#more" rel="contents">
@@ -417,9 +437,14 @@
     
     
     <div class="post-body" itemprop="articleBody">
-          <p>STL（标准模板库，Standard Template Library）是 C++ 标准库最重要的组成部分，包含了一系列算法与数据结构的可复用组件，分为六大组件 allocator, container, iterator, algorithms, functor, adapter。</p>
-<p>作为一个 ACMer，笔者一直想补足这部分比赛中不涉及的内容。首先参考侯捷先生所著《STL源码剖析》开发一款我们自己的 allocator，用于后续开发过程中的内存空间配置管理。</p>
-<p>在 STL 中，负责该部分的头文件为 &lt;memory&gt;，事实上分为三个主要的组成部分。</p>
+          <p>STL（标准模板库，Standard Template Library）是 C++
+标准库最重要的组成部分，包含了一系列算法与数据结构的可复用组件，分为六大组件
+allocator, container, iterator, algorithms, functor, adapter。</p>
+<p>作为一个
+ACMer，笔者一直想补足这部分比赛中不涉及的内容。首先参考侯捷先生所著《STL源码剖析》开发一款我们自己的
+allocator，用于后续开发过程中的内存空间配置管理。</p>
+<p>在 STL 中，负责该部分的头文件为
+&lt;memory&gt;，事实上分为三个主要的组成部分。</p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2024/08/28/%E5%BC%80%E5%8F%91%E6%97%A5%E5%BF%971/#more" rel="contents">
